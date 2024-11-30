@@ -107,11 +107,6 @@ class Alpiq_Dataset():
         return control_signal_data, output_data
     
     @staticmethod
-    def process_timeline_column(df):
-        df = df.reset_index()
-        return df
-    
-    @staticmethod
     def add_group_id(df):
 
         df = df.copy()
@@ -154,7 +149,8 @@ class SlidingWindowDataset(Dataset):
         #note that one day is 2880 timesteps
         self.X = np.array(data_frame[XS_VAR].head(100000000).values).astype(np.float32)
 
-        data_frame = Alpiq_Dataset.process_timeline_column(data_frame)
+        data_frame = data_frame.reset_index()
+        # data_frame = Alpiq_Dataset.process_timeline_column(data_frame)
         data_frame = Alpiq_Dataset.add_group_id(data_frame)
 
 
@@ -187,6 +183,7 @@ class SlidingWindowDataset(Dataset):
 
 
     def __getitem__(self, i):
+        """ instead of padding with zeros/mean skip the final window if it doesnt have the same size as others"""
         # Get the start and end indices of the window
         i_start, i_stop = self.indices[i]
 
