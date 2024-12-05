@@ -111,7 +111,7 @@ class Alpiq_Dataset():
 
         df = df.copy()
         df['index_diff'] = df['index'] - df['index'].shift(1).fillna(df['index'].iloc[0])
-        # print(df['index_diff'])
+        # print(df['index'].to_numpy())
 
 
     # Create a new group whenever the difference exceeds 1
@@ -160,7 +160,10 @@ class SlidingWindowDataset(Dataset):
 
         self.indices = torch.from_numpy(self._get_indices(window_counts)).to(device) 
         self.group_id = data_frame['group_id'].to_numpy()
-        # print(self.group_id[50])
+        self.indexes = data_frame['index'].to_numpy()
+        # print(self.indexes)
+
+        # print(self.group_id)
 
 
     def _get_indices(self, window_counts):
@@ -186,24 +189,16 @@ class SlidingWindowDataset(Dataset):
         """ instead of padding with zeros/mean skip the final window if it doesnt have the same size as others"""
         # Get the start and end indices of the window
         i_start, i_stop = self.indices[i]
-
+        # indices = 
         # Get the group_id for the starting index
         current_group_id = self.group_id[i_start]
-
+        # print(len(self.group_id))
+        indice = np.where(self.indexes ==(i_stop-1))[0]
+        print(indice)
         # Check if the entire window is within the same group
-        if self.group_id[i_stop - 1] != current_group_id:
             # Adjust the stop index to the last index of the current group
-            group_indices = (self.group_id == current_group_id).nonzero()[0]
-            adjusted_stop = group_indices[-1] + 1  # Last valid index + 1 for slicing
-
-            # Create the window with adjusted indices
-            x = self.X[i_start:adjusted_stop, :]
-
-            # Pad the window to maintain the required size
-            padding_length = self.window - x.shape[0]
-            if padding_length > 0:
-                padding = np.zeros((padding_length, x.shape[1]), dtype=np.float32)
-                x = np.vstack([x, padding])
+        if indice.size == 0 or self.group_id[indice[0]] != current_group_id:
+            return None 
         else:
             
             x = self.X[i_start:i_stop, :]
@@ -213,7 +208,8 @@ class SlidingWindowDataset(Dataset):
 
 
 def create_datasets(df, window_size,train = True, device='cpu'):
-
+    df = df.drop(columns=['equilibrium_short_circuit_mode','machine_on', 'machine_off', 'turbine_mode','all', 'equilibrium_turbine_mode', 'dyn_only_on', "short_circuit_mode",'pump_mode', 'equilibrium_pump_mode' ])
+    # print(type(df))
     dataset = SlidingWindowDataset(df, window=window_size)
 
     # normalizing features
@@ -230,6 +226,7 @@ def create_datasets(df, window_size,train = True, device='cpu'):
     for d in datasets:
         d.X = torch.from_numpy(d.X).to(device)
     
+    # print(type(datasets[0]))
     return datasets
 
 def create_data_loaders(datasets, batch_size=256, val_split=0.2):
@@ -237,7 +234,8 @@ def create_data_loaders(datasets, batch_size=256, val_split=0.2):
     random.seed(0)
     np.random.seed(0)
     
-    d_train = datasets
+    d_train = datasets[0]
+    # print(len(d_train))
     dataset_size = len(d_train)
     indices = list(range(dataset_size))
     # split = int(np.floor(val_split * dataset_size))
@@ -249,9 +247,9 @@ def create_data_loaders(datasets, batch_size=256, val_split=0.2):
     train_loader = DataLoader(d_train, batch_size=batch_size, sampler=train_sampler)
 
 
-    d_info = f"train_size: {len(train_indices)}\t"
+    # d_info = f"train_size: {len(train_indices)}\t"
 
-    print(d_info)
+    # print(d_info)
     return train_loader
 # STILL NEED TO DO A TIME WINDOWING 
 # STILL NEED TO DO A PLOTTING FUNCTIONS TO VISUALIZE 
@@ -264,9 +262,10 @@ XS_VAR = A1._train_info[A1._train_info['signal_type'] == 'Measurement']['attribu
 
 def main_dataset():
     DATASETS = create_datasets(A1._train_meas_filtered_pump, window_size=50, train= True)  
-    
     X = create_data_loaders(DATASETS) 
 
+    for x in X:
+        print('hi')
     # divide into operating modes 
     
     # for every operating mode, create a sliding window dataset

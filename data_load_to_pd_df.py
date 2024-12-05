@@ -40,7 +40,7 @@ class RawDataset():
         for id_c, c in cases.items():
             # if you need to verify the parquet header:
             # pq_rows = RawDataset.read_parquet_schema_df(root / c[0])
-            print(f"idc: {id_c} c: {c}")
+            # print(f"idc: {id_c} c: {c}")
             info = pd.read_csv(c[1])
             measurements = read_pq_file(c[0])
             self.data_dict[id_c] = Case(info, measurements)
