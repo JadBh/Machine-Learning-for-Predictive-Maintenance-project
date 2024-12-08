@@ -261,8 +261,16 @@ A1 = Alpiq_Dataset(root, 'VG5', True, False, True)
 XS_VAR = A1._train_info[A1._train_info['signal_type'] == 'Measurement']['attribute_name'].tolist()
 
 def main_dataset():
-    DATASETS = create_datasets(A1._train_meas_filtered_pump, window_size=50, train= True)  
+    DATASETS = create_datasets(A1._train_meas_filtered_pump, window_size=50, train= True)   # returns sliding window class, whose elements [i] are each a sliding window of 50
+
+    for i, x in enumerate(DATASETS):
+        print("length x is: ", len(x))
+        print("x element type is: ", type(x[10]))
+        print("x element shape is: ", x[10].shape)
+
+    
     X = create_data_loaders(DATASETS) 
+    print(next(iter(X)))
 
     for x in X:
         print('hi')
@@ -278,3 +286,4 @@ def main_dataset():
 
 if __name__ == "__main__":
     main_dataset()
+
